@@ -1,0 +1,10 @@
+{
+  "name": "mixed-timeseries-chart",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Area + bar + spline + line time-series chart on one shared axis, with an axis-tooltip and crosshair, built with ECharts.",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "license": "MIT"
+}
