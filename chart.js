@@ -2,26 +2,37 @@
  * Mixed time-series chart: area + bar + spline + straight line, one shared
  * value axis, ECharts axis-tooltip with per-series colored bullets.
  *
+ * Colors, the widget's pink background, the ROI line's gradient, and the
+ * single-nearest-marker hover halo were all measured from the reference
+ * recording (frame-by-frame pixel sampling) — see README.md.
+ *
  * To use with your own data, edit data.js (window.CHART_DATA) — see README.md.
  */
 (function () {
   const raw = window.CHART_DATA || [];
 
-  // ---- series metadata: order here drives legend + tooltip row order -------
+  function getVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  // ---- series metadata: order here drives tooltip row order -----------------
+  // `color` is each series' on-chart accent (line/marker/dot color); area and
+  // bar fills are their own, paler colors, read directly from CSS in
+  // buildSeries — the reference's tooltip bullets are more saturated than
+  // either fill, so they get their own dotColor too.
   const SERIES_META = [
     {
       key: 'cost',
       name: 'Cost',
       chartType: 'area',
-      color: getVar('--color-cost'),
-      fill: getVar('--color-cost-fill'),
+      color: getVar('--color-cost-dot'),
       format: (v) => v.toFixed(2),
     },
     {
       key: 'cpa',
       name: 'CPA',
       chartType: 'bar',
-      color: getVar('--color-cpa'),
+      color: getVar('--color-cpa-dot'),
       format: (v) => v.toFixed(2),
     },
     {
@@ -29,6 +40,7 @@
       name: 'ROI confirmed',
       chartType: 'spline',
       color: getVar('--color-roi'),
+      colorBright: getVar('--color-roi-bright'),
       format: (v) => v.toFixed(2),
     },
     {
@@ -39,31 +51,6 @@
       format: (v) => Math.round(v).toString(),
     },
   ];
-
-  function getVar(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
-
-  // ---- legend ---------------------------------------------------------------
-  function renderLegend() {
-    const legend = document.getElementById('legend');
-    legend.innerHTML = '';
-    SERIES_META.forEach((s) => {
-      const item = document.createElement('div');
-      item.className = 'legend__item';
-
-      const dot = document.createElement('span');
-      dot.className = 'legend__dot';
-      dot.style.background = s.color;
-
-      const label = document.createElement('span');
-      label.textContent = s.name;
-
-      item.appendChild(dot);
-      item.appendChild(label);
-      legend.appendChild(item);
-    });
-  }
 
   // ---- stat rail --------------------------------------------------------------
   function renderStatRail() {
@@ -89,8 +76,8 @@
         data,
         smooth: false,
         symbol: 'none',
-        lineStyle: { width: 1, color: meta.color, opacity: 0.6 },
-        areaStyle: { color: meta.fill, opacity: 0.65 },
+        lineStyle: { opacity: 0 },
+        areaStyle: { color: getVar('--color-cost-fill'), opacity: 1 },
         z: 1,
       };
     }
@@ -101,13 +88,20 @@
         type: 'bar',
         data,
         barWidth: 10,
-        itemStyle: { color: meta.color, borderRadius: [2, 2, 0, 0] },
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: getVar('--color-cpa-top') },
+            { offset: 1, color: getVar('--color-cpa-bottom') },
+          ]),
+          borderRadius: [2, 2, 0, 0],
+        },
         z: 2,
       };
     }
 
     if (meta.chartType === 'spline') {
       return {
+        id: 'series-roi',
         name: meta.name,
         type: 'line',
         data,
@@ -115,18 +109,25 @@
         symbol: 'circle',
         symbolSize: 8,
         showSymbol: false,
-        lineStyle: { width: 2.5, color: meta.color },
+        lineStyle: {
+          width: 2.5,
+          // mostly the base green, brightening sharply only near the
+          // bottom of the line's own vertical span (i.e. its lowest dip) —
+          // matches the reference, which is *not* a smooth end-to-end fade
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: meta.color },
+            { offset: 0.75, color: meta.color },
+            { offset: 0.92, color: meta.colorBright },
+            { offset: 1, color: meta.colorBright },
+          ]),
+        },
         itemStyle: { color: meta.color },
-        // hover: soft glowing halo behind a white-centered ring, matching
-        // the reference's blurred highlight circle at the active point
         emphasis: {
           scale: 2.5,
           itemStyle: {
             color: '#ffffff',
-            borderColor: meta.color,
+            borderColor: meta.colorBright,
             borderWidth: 3,
-            shadowBlur: 26,
-            shadowColor: meta.color,
           },
         },
         z: 3,
@@ -135,6 +136,7 @@
 
     // straight line, square markers, drawn on top
     return {
+      id: 'series-conversions',
       name: meta.name,
       type: 'line',
       data,
@@ -143,20 +145,38 @@
       symbolSize: 9,
       lineStyle: { width: 2, color: meta.color },
       itemStyle: { color: meta.color },
-      // same white-centered glow treatment as the spline series — a same-
-      // color shadow on a same-color fill is invisible on a dark surface,
-      // so light the core white the way the ROI point does
       emphasis: {
         scale: 2.2,
         itemStyle: {
           color: '#ffffff',
           borderColor: meta.color,
           borderWidth: 3,
-          shadowBlur: 26,
-          shadowColor: meta.color,
         },
       },
       z: 4,
+    };
+  }
+
+  // A soft translucent aura sits *behind* the emphasized marker — ECharts'
+  // emphasis styling alone (a ring) is too crisp; the reference's highlight
+  // is a wide, blurred glow. One silent scatter series per markable metric,
+  // empty until hover moves a single point into it.
+  function buildHalo(meta) {
+    return {
+      id: 'halo-' + meta.key,
+      name: meta.name + ' halo',
+      type: 'scatter',
+      data: raw.map(() => null),
+      symbolSize: 46,
+      itemStyle: {
+        color: meta.colorBright || meta.color,
+        opacity: 0.32,
+        shadowBlur: 22,
+        shadowColor: meta.colorBright || meta.color,
+      },
+      silent: true,
+      tooltip: { show: false },
+      z: 2,
     };
   }
 
@@ -167,11 +187,12 @@
   }
 
   function tooltipFormatter(params) {
-    if (!params || !params.length) return '';
-    const date = formatDate(raw[params[0].dataIndex].date);
+    const points = params.filter((p) => p.seriesType !== 'scatter');
+    if (!points.length) return '';
+    const date = formatDate(raw[points[0].dataIndex].date);
 
     const rows = SERIES_META.map((meta) => {
-      const p = params.find((p) => p.seriesName === meta.name);
+      const p = points.find((p) => p.seriesName === meta.name);
       const value = p ? meta.format(p.value) : '—';
       return `
         <div class="tt-row">
@@ -188,13 +209,14 @@
 
   // ---- chart init -------------------------------------------------------------
   function init() {
-    renderLegend();
     renderStatRail();
 
     const chart = echarts.init(document.getElementById('chart'));
 
+    const markable = SERIES_META.filter((m) => m.chartType === 'spline' || m.chartType === 'line');
+
     const option = {
-      grid: { left: 12, right: 12, top: 16, bottom: 8, containLabel: false },
+      grid: { left: 8, right: 8, top: 10, bottom: 6, containLabel: false },
       xAxis: {
         type: 'category',
         data: raw.map((d) => d.date),
@@ -222,7 +244,7 @@
         extraCssText: 'border-radius:16px; box-shadow:0 12px 32px rgba(31,36,48,0.18); min-width:280px;',
         formatter: tooltipFormatter,
       },
-      series: SERIES_META.map(buildSeries),
+      series: [...SERIES_META.map(buildSeries), ...markable.map(buildHalo)],
     };
 
     chart.setOption(option);
@@ -232,36 +254,47 @@
     // marker sits closest (vertically) to the actual cursor — not every
     // series sharing that date. ECharts' axis-trigger tooltip highlights
     // all of them by default, so on every axis-pointer update we downplay
-    // everything and re-highlight only the nearest markable (line/spline)
-    // series ourselves.
-    const markableIndices = SERIES_META
-      .map((meta, index) => ((meta.chartType === 'spline' || meta.chartType === 'line') ? index : -1))
-      .filter((index) => index !== -1);
+    // everything and re-highlight only the nearest markable series, and
+    // move its halo scatter point to match.
+    function clearHover() {
+      chart.dispatchAction({ type: 'downplay' });
+      chart.setOption({
+        series: markable.map((m) => ({ id: 'halo-' + m.key, data: raw.map(() => null) })),
+      });
+    }
 
     chart.on('updateAxisPointer', (event) => {
       const dataIndex = event.dataIndex;
       const mouseY = event.event && event.event.offsetY;
       if (dataIndex == null || mouseY == null) return;
 
-      let nearestIndex = -1;
+      let nearest = null;
       let nearestDist = Infinity;
-      markableIndices.forEach((seriesIndex) => {
-        const meta = SERIES_META[seriesIndex];
+      markable.forEach((meta) => {
+        const seriesIndex = SERIES_META.indexOf(meta);
         const value = raw[dataIndex][meta.key];
         const px = chart.convertToPixel({ seriesIndex }, [dataIndex, value]);
         if (!px) return;
         const dist = Math.abs(px[1] - mouseY);
         if (dist < nearestDist) {
           nearestDist = dist;
-          nearestIndex = seriesIndex;
+          nearest = meta;
         }
       });
 
       chart.dispatchAction({ type: 'downplay' });
-      if (nearestIndex !== -1) {
-        chart.dispatchAction({ type: 'highlight', seriesIndex: nearestIndex, dataIndex });
+      if (nearest) {
+        chart.dispatchAction({ type: 'highlight', seriesIndex: SERIES_META.indexOf(nearest), dataIndex });
       }
+      chart.setOption({
+        series: markable.map((m) => ({
+          id: 'halo-' + m.key,
+          data: raw.map((d, i) => (m === nearest && i === dataIndex ? d[m.key] : null)),
+        })),
+      });
     });
+
+    chart.getZr().on('globalout', clearHover);
   }
 
   if (document.readyState === 'loading') {
