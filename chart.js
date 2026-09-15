@@ -55,9 +55,6 @@
       const dot = document.createElement('span');
       dot.className = 'legend__dot';
       dot.style.background = s.color;
-      if (s.chartType === 'line' || s.chartType === 'bar') {
-        dot.style.borderRadius = '2px'; // square swatch for square-marker / bar series
-      }
 
       const label = document.createElement('span');
       label.textContent = s.name;
@@ -163,11 +160,10 @@
     const rows = SERIES_META.map((meta) => {
       const p = params.find((p) => p.seriesName === meta.name);
       const value = p ? meta.format(p.value) : '—';
-      const shape = meta.chartType === 'line' || meta.chartType === 'bar' ? '2px' : '50%';
       return `
         <div class="tt-row">
           <span class="tt-row__label">
-            <span class="tt-dot" style="background:${meta.color};border-radius:${shape}"></span>
+            <span class="tt-dot" style="background:${meta.color}"></span>
             ${meta.name}:
           </span>
           <span class="tt-row__value">&nbsp;${value}</span>
