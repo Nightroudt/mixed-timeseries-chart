@@ -103,10 +103,22 @@
         data,
         smooth: true,
         symbol: 'circle',
-        symbolSize: 0,
+        symbolSize: 8,
         showSymbol: false,
         lineStyle: { width: 2.5, color: meta.color },
         itemStyle: { color: meta.color },
+        // hover: soft glowing halo behind a white-centered ring, matching
+        // the reference's blurred highlight circle at the active point
+        emphasis: {
+          scale: 2.5,
+          itemStyle: {
+            color: '#ffffff',
+            borderColor: meta.color,
+            borderWidth: 3,
+            shadowBlur: 26,
+            shadowColor: meta.color,
+          },
+        },
         z: 3,
       };
     }
@@ -121,6 +133,14 @@
       symbolSize: 9,
       lineStyle: { width: 2, color: meta.color },
       itemStyle: { color: meta.color },
+      // same soft-glow treatment on hover as the spline series
+      emphasis: {
+        scale: 1.8,
+        itemStyle: {
+          shadowBlur: 26,
+          shadowColor: meta.color,
+        },
+      },
       z: 4,
     };
   }
