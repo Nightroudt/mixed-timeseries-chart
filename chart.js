@@ -133,10 +133,15 @@
       symbolSize: 9,
       lineStyle: { width: 2, color: meta.color },
       itemStyle: { color: meta.color },
-      // same soft-glow treatment on hover as the spline series
+      // same white-centered glow treatment as the spline series — a same-
+      // color shadow on a same-color fill is invisible on a dark surface,
+      // so light the core white the way the ROI point does
       emphasis: {
-        scale: 1.8,
+        scale: 2.2,
         itemStyle: {
+          color: '#ffffff',
+          borderColor: meta.color,
+          borderWidth: 3,
           shadowBlur: 26,
           shadowColor: meta.color,
         },
