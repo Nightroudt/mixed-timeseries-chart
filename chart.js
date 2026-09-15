@@ -110,14 +110,16 @@
         symbolSize: 8,
         showSymbol: false,
         lineStyle: {
-          width: 2.5,
-          // mostly the base green, brightening sharply only near the
-          // bottom of the line's own vertical span (i.e. its lowest dip) —
-          // matches the reference, which is *not* a smooth end-to-end fade
+          // measured directly off the reference frame (~7px vertical stroke
+          // extent) — 2.5 was much thinner than the real line
+          width: 6,
+          // mostly the base green, brightening near the bottom of the
+          // line's own vertical span (i.e. its lowest dip) — matches the
+          // reference, which is *not* a smooth end-to-end fade
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: meta.color },
-            { offset: 0.75, color: meta.color },
-            { offset: 0.92, color: meta.colorBright },
+            { offset: 0.45, color: meta.color },
+            { offset: 0.85, color: meta.colorBright },
             { offset: 1, color: meta.colorBright },
           ]),
         },
@@ -167,11 +169,16 @@
       name: meta.name + ' halo',
       type: 'scatter',
       data: raw.map(() => null),
-      symbolSize: 46,
+      // no transition animation: this series' data flips on every mouse
+      // pixel while hovering, and the default ~1s fade meant it was almost
+      // always mid-transition (and so nearly invisible) instead of snapping
+      // straight to full opacity at the cursor's position
+      animation: false,
+      symbolSize: 60,
       itemStyle: {
         color: meta.colorBright || meta.color,
-        opacity: 0.32,
-        shadowBlur: 22,
+        opacity: 0.45,
+        shadowBlur: 30,
         shadowColor: meta.colorBright || meta.color,
       },
       silent: true,
