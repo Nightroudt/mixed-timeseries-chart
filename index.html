@@ -17,6 +17,9 @@
     --color-cpa: #4a8fe0;       /* bar    */
     --color-roi: #2f8f3f;       /* spline */
     --color-conversions: #b026c7; /* line   */
+
+    --rail-cell-bg: #f4f2fb;
+    --rail-cell-border: #e7e3f5;
   }
 
   * { box-sizing: border-box; }
@@ -29,9 +32,46 @@
     color: var(--ink-primary);
   }
 
-  .card {
-    max-width: 960px;
+  .widget {
+    max-width: 1020px;
     margin: 0 auto;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  /* ---- left stat rail -------------------------------------------------- */
+  .stat-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 64px;
+    flex: none;
+  }
+
+  .stat-rail__cell {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--rail-cell-bg);
+    border: 1px solid var(--rail-cell-border);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ink-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-rail__cell--period {
+    color: var(--ink-primary);
+    font-weight: 700;
+    background: var(--card-bg);
+  }
+
+  /* ---- chart card -------------------------------------------------------- */
+  .card {
+    flex: 1;
+    min-width: 0;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 16px;
@@ -41,7 +81,7 @@
 
   .card__header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     margin-bottom: 4px;
   }
@@ -51,6 +91,21 @@
     font-weight: 600;
     color: var(--ink-primary);
   }
+
+  .card__edit-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--ink-secondary);
+    cursor: pointer;
+    flex: none;
+  }
+  .card__edit-btn:hover { background: var(--rail-cell-bg); }
 
   .legend {
     display: flex;
@@ -109,14 +164,21 @@
 </head>
 <body>
 
-  <div class="card">
-    <div class="card__header">
-      <div class="card__title">Cost · CPA · ROI confirmed · Conversions</div>
+  <div class="widget">
+    <div class="stat-rail" id="statRail"></div>
+
+    <div class="card">
+      <div class="card__header">
+        <div class="card__title">Cost · CPA · ROI confirmed · Conversions</div>
+        <button class="card__edit-btn" type="button" aria-label="Edit widget">
+          ✏️ ▾
+        </button>
+      </div>
+
+      <div class="legend" id="legend"></div>
+
+      <div id="chart"></div>
     </div>
-
-    <div class="legend" id="legend"></div>
-
-    <div id="chart"></div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.6.0/echarts.min.js"></script>

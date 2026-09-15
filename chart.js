@@ -65,6 +65,19 @@
     });
   }
 
+  // ---- stat rail --------------------------------------------------------------
+  function renderStatRail() {
+    const rail = document.getElementById('statRail');
+    if (!rail) return;
+    rail.innerHTML = '';
+    (window.STAT_RAIL || []).forEach((cell) => {
+      const el = document.createElement('div');
+      el.className = 'stat-rail__cell' + (cell.period ? ' stat-rail__cell--period' : '');
+      el.textContent = cell.period ? cell.label : cell.value;
+      rail.appendChild(el);
+    });
+  }
+
   // ---- ECharts series builders ----------------------------------------------
   function buildSeries(meta) {
     const data = raw.map((d) => d[meta.key]);
@@ -176,6 +189,7 @@
   // ---- chart init -------------------------------------------------------------
   function init() {
     renderLegend();
+    renderStatRail();
 
     const chart = echarts.init(document.getElementById('chart'));
 

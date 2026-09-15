@@ -14,3 +14,18 @@ window.CHART_DATA = [
   { date: '2026-06-13', cost: 46.90, cpa: 1.30, roi: 175.80, conversions: 40 },
   { date: '2026-06-14', cost: 49.50, cpa: 1.35, roi: 205.10, conversions: 46 },
 ];
+
+/**
+ * Left-hand stat rail next to the chart — a period pill ("Tdy") followed by
+ * a stack of small value cells. Replace freely: each entry after the first
+ * is rendered as its own rounded cell, top to bottom.
+ */
+window.STAT_RAIL = [
+  { label: 'Tdy', period: true },
+  { value: '0%' },
+  { value: '$0' },
+  { value: '$0' },
+  { value: '0' },
+  { value: '0' },
+  { value: '—' },
+];
