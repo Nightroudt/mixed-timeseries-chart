@@ -4,12 +4,19 @@
  *
  * Each point needs: date (YYYY-MM-DD) + the 4 metric values.
  */
+// These 5 points were reconstructed by measuring pixel positions directly
+// off the reference recording's resting (no-hover) frame and converting
+// them to values on one consistent scale, calibrated against the one
+// on-screen number confirmed for that exact frame (Conversions: 36 at the
+// 3rd point) — see README.md. Different hover moments in that recording
+// showed numbers on what turned out to be an unrelated scale (a different
+// account/date range), so those weren't usable here.
 window.CHART_DATA = [
-  { date: '2026-06-10', cost: 2.04, cpa: 0.68, roi: 610.78, conversions: 3 },
-  { date: '2026-06-11', cost: 15.50, cpa: 0.95, roi: 210.00, conversions: 11 },
-  { date: '2026-06-12', cost: 44.36, cpa: 1.23, roi: 161.47, conversions: 36 },
-  { date: '2026-06-13', cost: 47.20, cpa: 1.28, roi: 118.90, conversions: 41 },
-  { date: '2026-06-14', cost: 49.50, cpa: 1.35, roi: 175.30, conversions: 46 },
+  { date: '2026-06-10', cost: 1.70, cpa: 0.60, roi: 94.10, conversions: 3.10 },
+  { date: '2026-06-11', cost: 41.60, cpa: 0.90, roi: 60.00, conversions: 29.60 },
+  { date: '2026-06-12', cost: 71.30, cpa: 1.20, roi: 25.80, conversions: 36.00 },
+  { date: '2026-06-13', cost: 89.30, cpa: 1.30, roi: 9.20, conversions: 69.30 },
+  { date: '2026-06-14', cost: 101.70, cpa: 1.40, roi: 56.40, conversions: 89.30 },
 ];
 
 /**
