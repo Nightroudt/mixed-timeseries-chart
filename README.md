@@ -28,9 +28,10 @@ Then open the printed local URL (or just double-click `index.html`).
 
 ## Files
 
-- `index.html` — page markup + styles (card, legend, chart container)
-- `chart.js` — ECharts configuration: series types, colors, tooltip formatting
-- `data.js` — the data source, as `window.CHART_DATA`
+- `index.html` — page markup + styles (stat rail, card, legend, chart container)
+- `chart.js` — ECharts configuration: series types, colors, tooltip formatting,
+  stat rail rendering, single-nearest-marker hover behavior
+- `data.js` — the data sources: `window.CHART_DATA` and `window.STAT_RAIL`
 
 ## Feeding your own 4 time-series
 
@@ -51,6 +52,28 @@ window.CHART_DATA = [
   baseline — that's expected, not a bug)
 
 No other code changes are needed — the chart re-reads `window.CHART_DATA` on load.
+
+## Customizing the stat rail
+
+The narrow column to the left of the chart (a "Tdy" period pill above a stack
+of value cells) is driven by `window.STAT_RAIL` in `data.js`:
+
+```js
+window.STAT_RAIL = [
+  { label: 'Tdy', period: true },
+  { value: '0%' },
+  { value: '$0' },
+  { value: '$0' },
+  { value: '0' },
+  { value: '0' },
+  { value: '—' },
+];
+```
+
+The first `period: true` entry renders as the bold period pill; every other
+entry is one rounded value cell, top to bottom. Add, remove, or relabel cells
+freely — the rail lays them out with `flex: 1` each, so it always fills the
+same height as the chart card next to it.
 
 ## Customizing
 
@@ -73,9 +96,14 @@ gets which chart type, change `chartType` (`'area' | 'bar' | 'spline' | 'line'`)
 
 ## Behavior notes (matching the reference)
 
-- Hovering shows a dashed vertical crosshair snapped to the nearest date, plus
-  a small ring marker on each line/spline series at that point.
-- The tooltip is a white rounded card with a colored bullet + name + bold value
-  per series, headed by the hovered date.
-- Legend dots use a circle for area/spline series and a square swatch for the
-  bar/line series, matching their on-chart marker shape.
+- Hovering the chart shows the tooltip for the nearest date (axis-triggered),
+  but only **one** marker glows — whichever line/spline series sits closest to
+  the cursor's actual vertical position, not every series sharing that date.
+  There's no full-height crosshair guide line, matching the reference.
+- The glowing marker is a white-centered ring in that series' color with a
+  soft shadow blur, not a plain thin highlight ring.
+- The tooltip is a white rounded card with a round colored bullet + name +
+  bold value per series (all bullets are circles, regardless of the series'
+  on-chart marker shape), headed by the hovered date.
+- The card has a small "✏️ ▾" edit button in its top-right corner (inert —
+  wire it up to whatever the button should open).
