@@ -216,10 +216,11 @@
     const markable = SERIES_META.filter((m) => m.chartType === 'spline' || m.chartType === 'line');
 
     const option = {
-      // bottom needs real room: the baseline markers (CPA bars, the first
-      // Conversions square) sit right on the value-axis zero line, which
-      // otherwise lands flush against the chart box's border
-      grid: { left: 8, right: 8, top: 14, bottom: 22, containLabel: false },
+      // Real room on every side: with boundaryGap:false the first/last
+      // points sit exactly on the grid's left/right edges, and CPA bars +
+      // the Conversions markers sit on the value-axis zero line — all of
+      // which land flush against the chart box's border without this.
+      grid: { left: 24, right: 24, top: 16, bottom: 32, containLabel: false },
       xAxis: {
         type: 'category',
         data: raw.map((d) => d.date),
