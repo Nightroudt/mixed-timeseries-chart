@@ -189,11 +189,6 @@
         axisTick: { show: false },
         axisLabel: { show: false },
         splitLine: { show: false },
-        axisPointer: {
-          show: true,
-          type: 'line',
-          lineStyle: { color: '#d7d7e0', type: 'dashed' },
-        },
       },
       yAxis: {
         type: 'value',
@@ -204,7 +199,9 @@
       },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'line' },
+        // no crosshair line/shadow — the reference has no visible vertical
+        // guide, only the glowing point itself
+        axisPointer: { type: 'none' },
         backgroundColor: '#ffffff',
         borderWidth: 0,
         padding: 20,
@@ -216,6 +213,41 @@
 
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
+
+    // The reference glows exactly one point per hover — whichever series'
+    // marker sits closest (vertically) to the actual cursor — not every
+    // series sharing that date. ECharts' axis-trigger tooltip highlights
+    // all of them by default, so on every axis-pointer update we downplay
+    // everything and re-highlight only the nearest markable (line/spline)
+    // series ourselves.
+    const markableIndices = SERIES_META
+      .map((meta, index) => ((meta.chartType === 'spline' || meta.chartType === 'line') ? index : -1))
+      .filter((index) => index !== -1);
+
+    chart.on('updateAxisPointer', (event) => {
+      const dataIndex = event.dataIndex;
+      const mouseY = event.event && event.event.offsetY;
+      if (dataIndex == null || mouseY == null) return;
+
+      let nearestIndex = -1;
+      let nearestDist = Infinity;
+      markableIndices.forEach((seriesIndex) => {
+        const meta = SERIES_META[seriesIndex];
+        const value = raw[dataIndex][meta.key];
+        const px = chart.convertToPixel({ seriesIndex }, [dataIndex, value]);
+        if (!px) return;
+        const dist = Math.abs(px[1] - mouseY);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearestIndex = seriesIndex;
+        }
+      });
+
+      chart.dispatchAction({ type: 'downplay' });
+      if (nearestIndex !== -1) {
+        chart.dispatchAction({ type: 'highlight', seriesIndex: nearestIndex, dataIndex });
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
